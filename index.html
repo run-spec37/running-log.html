@@ -1,0 +1,2282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>練習日誌</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12161d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="練習日誌">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --bg: #12161d;
+    --surface: #1b212b;
+    --surface-2: #232b37;
+    --text: #eef1f5;
+    --text-dim: #8b93a3;
+    --accent: #c9f31d;
+    --accent-text: #12161d;
+    --danger: #ff5d5d;
+    --border: #2a3341;
+    --z1: #4fc3a1;
+    --z2: #8bc34a;
+    --z3: #c9f31d;
+    --z4: #ff9f45;
+    --z5: #ff5d5d;
+    --rest: #8a94a6;
+    --race: #ffd54f;
+    --cross: #7b93ff;
+    --customcat: #c792ea;
+    --aux: #64d9e8;
+    --m-blue: #4a90e2;
+    --m-green: #4caf50;
+    --m-yellowgreen: #b5c62e;
+    --m-yellow: #ffd400;
+    --m-orange: #ff8f2e;
+    --m-red: #ff5252;
+    --m-gold: #ffd54f;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app { max-width: 480px; margin: 0 auto; padding: 20px 14px 90px; }
+
+  .tab-bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    z-index: 15;
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 0;
+    border-radius: 12px;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: transparent;
+  }
+
+  .ratio-bar {
+    display: flex;
+    height: 22px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: var(--surface-2);
+  }
+  .ratio-bar .seg { height: 100%; }
+  .ratio-legend { display: flex; flex-direction: column; gap: 10px; }
+  .ratio-legend .row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .ratio-legend .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .ratio-legend .name { flex: 1; color: var(--text); }
+  .ratio-legend .pct { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ratio-legend .km { color: var(--text-dim); font-size: 12px; width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  header { margin-bottom: 20px; }
+  header .eyebrow { font-size: 12px; color: var(--text-dim); letter-spacing: 0.04em; }
+  header h1 { font-size: 22px; margin: 4px 0 0; font-weight: 700; }
+
+  .dash {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .dash-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 10px;
+  }
+  .dash-card .label { font-size: 11px; color: var(--text-dim); }
+  .dash-card .num {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .dash-card .num span { font-size: 12px; font-weight: 500; color: var(--text-dim); margin-left: 2px; }
+  .dash-card .sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+  section.block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .month-nav button {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    font-size: 16px;
+  }
+  .month-nav .label { font-size: 15px; font-weight: 700; }
+
+  .day-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .day-row:last-child { border-bottom: none; }
+  .day-row.today { background: rgba(201,243,29,0.06); border-radius: 8px; }
+  .day-row.empty .menu-chip { visibility: hidden; }
+  .day-row .date-col {
+    flex: none;
+    width: 52px;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.3;
+  }
+  .day-row.today .date-col { color: var(--accent); font-weight: 700; }
+  .day-row .date-col .dow { font-size: 10px; }
+  .day-row .train-col {
+    flex: 7;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .day-row .cond-col {
+    flex: 3;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-left: 1px solid var(--border);
+    padding-left: 8px;
+    cursor: pointer;
+  }
+  .col-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 4px 6px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 700;
+  }
+  .col-header .date-col { width: 52px; flex: none; }
+  .col-header .train-col { flex: 7; }
+  .col-header .cond-col { flex: 3; border-left: 1px solid var(--border); padding-left: 8px; }
+  .day-row .mid-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .menu-chip {
+    flex: none;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: var(--accent-text);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .day-row .comment-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  .day-row .right-col {
+    flex: none;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 700;
+    min-width: 44px;
+  }
+  .day-row .right-col .rpe {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+  .day-row .placeholder { color: var(--text-dim); font-size: 12px; }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+  .field input[type="date"],
+  .field input[type="number"],
+  .field textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 11px 12px;
+    font-size: 16px;
+    font-family: inherit;
+  }
+  .field textarea { resize: vertical; min-height: 140px; font-size: 16px; line-height: 1.5; }
+  .field.hidden { display: none; }
+
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .menu-btn {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 9px 2px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .menu-btn.selected { border-color: transparent; color: var(--accent-text); }
+
+  .rpe-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .rpe-btn {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 0;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .rpe-btn.selected { border-color: transparent; color: var(--accent-text); }
+  .rpe-hint { margin-top: 8px; font-size: 12px; color: var(--text-dim); text-align: center; min-height: 16px; }
+
+  .scale-btn {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 0;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .scale-btn.selected { border-color: transparent; color: var(--accent-text); }
+
+  .pain-row { display:flex; gap:8px; align-items:flex-end; margin-bottom:10px; }
+  .pain-row .del-btn {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 18px; padding: 0 4px 10px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .btn-secondary {
+    width: 100%;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .btn-danger-outline {
+    width: 100%;
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  .fab {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 448px;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 14px;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .sheet-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: flex-end;
+    z-index: 10;
+  }
+  .sheet-backdrop.open { display: flex; }
+  .sheet {
+    background: var(--bg);
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    border-radius: 20px 20px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    max-height: 88vh;
+    overflow-y: auto;
+    border-top: 1px solid var(--border);
+  }
+  .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .sheet-head h3 { margin: 0; font-size: 16px; }
+  .sheet-head button { background: none; border: none; color: var(--text-dim); font-size: 14px; }
+
+  .toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 16px; border-radius: 10px;
+    font-size: 13px; z-index: 20; opacity: 0; transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <div>
+        <div class="eyebrow">TRAINING LOG</div>
+        <h1>練習日誌</h1>
+      </div>
+      <button id="profileButton" style="background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:8px 12px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px;">
+        <span>👤</span><span id="profileNameLabel">自分</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="month-nav">
+    <button id="prevMonth">‹</button>
+    <div class="label" id="monthLabel">2026年9月</div>
+    <button id="nextMonth">›</button>
+  </div>
+
+  <div id="calendarView">
+    <section class="block">
+      <div class="col-header">
+        <div class="date-col"></div>
+        <div class="train-col">練習</div>
+        <div class="cond-col">コンディション</div>
+      </div>
+      <div id="calendar"></div>
+    </section>
+  </div>
+
+  <div id="dataView" style="display:none;">
+    <div class="dash">
+      <div class="dash-card">
+        <div class="label">過去7日間</div>
+        <div class="num" id="sum7">0<span>km</span></div>
+      </div>
+      <div class="dash-card">
+        <div class="label">過去30日間</div>
+        <div class="num" id="sum30">0<span>km</span></div>
+      </div>
+      <div class="dash-card">
+        <div class="label">ACWR</div>
+        <div class="num" id="acwr">-</div>
+        <div class="sub" id="acwrSub">&nbsp;</div>
+      </div>
+      <div class="dash-card">
+        <div class="label">過去7日間の運動時間</div>
+        <div class="num" id="time7">0<span>分</span></div>
+      </div>
+    </div>
+
+    <section class="block">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <div style="font-size:14px; font-weight:700; color:var(--text-dim);">強度割合（<span id="colorRatioMonthLabel"></span>・Run）</div>
+        <select id="ratioMetricSelect" style="background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px 8px; font-size:12px; font-family:inherit;">
+          <option value="distance">距離</option>
+          <option value="frequency">頻度</option>
+          <option value="time">時間</option>
+        </select>
+      </div>
+      <div id="colorRatioChart"></div>
+    </section>
+
+    <section class="block">
+      <div style="font-size:14px; font-weight:700; color:var(--text-dim); margin-bottom:12px;">目標</div>
+      <div class="field">
+        <label>長期目標</label>
+        <textarea id="goalLongTerm" placeholder="例：来年の県大会で自己ベスト更新" style="min-height:80px; font-size:17px;"></textarea>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>短期目標</label>
+        <textarea id="goalShortTerm" placeholder="例：来月までに5000mのペースを上げる" style="min-height:80px; font-size:17px;"></textarea>
+      </div>
+    </section>
+
+    <section class="block">
+      <div style="font-size:14px; font-weight:700; color:var(--text-dim); margin-bottom:12px;">PB</div>
+      <div id="pbTable"></div>
+    </section>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="tabCalendarBtn">カレンダー</button>
+  <button class="tab-btn" id="tabDataBtn">データ</button>
+</div>
+
+<div class="sheet-backdrop" id="backdrop">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3 id="sheetTitle">記録を追加</h3>
+      <button id="closeSheet">閉じる</button>
+    </div>
+
+    <div class="field">
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label>日付</label>
+          <input type="date" id="fDate">
+        </div>
+        <div style="flex:1;">
+          <label>時間帯</label>
+          <select id="fTimeOfDay" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+            <option value="">なし</option>
+            <option value="朝練">朝練</option>
+            <option value="午前練">午前練</option>
+            <option value="午後練">午後練</option>
+            <option value="夜練">夜練</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label>種目</label>
+          <select id="categorySelect" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;"></select>
+        </div>
+        <div style="flex:1;">
+          <label>メニュー</label>
+          <select id="menuSelect" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+            <option value="" disabled selected>選択してください</option>
+          </select>
+        </div>
+      </div>
+      <div id="addCategoryInline" style="display:none; margin-top:8px;">
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="newCategoryInput" placeholder="新しい種目名" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+          <button type="button" id="confirmAddCategory" style="flex:none; background:var(--accent); color:var(--accent-text); border:none; border-radius:10px; padding:0 16px; font-size:14px; font-weight:700;">追加</button>
+        </div>
+      </div>
+      <div id="addItemInline" style="display:none; margin-top:8px;">
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="newItemInput" placeholder="新しいメニュー名" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+          <button type="button" id="confirmAddItem" style="flex:none; background:var(--accent); color:var(--accent-text); border:none; border-radius:10px; padding:0 16px; font-size:14px; font-weight:700;">追加</button>
+        </div>
+      </div>
+      <button type="button" id="openManage" style="background:none; border:none; color:var(--text-dim); font-size:12px; text-decoration:underline; padding:6px 0 0; display:block;">追加した種目・メニューを管理</button>
+    </div>
+    <div class="field">
+      <div style="display:flex; gap:8px;">
+        <div class="field" style="flex:1; margin-bottom:0;" id="drillField">
+          <label>ドリル</label>
+          <input type="text" id="fDrill" placeholder="例：Aスキップ, Bスキップ, もも上げ">
+        </div>
+        <div class="field" style="flex:1; margin-bottom:0;" id="shoeField">
+          <label>シューズ</label>
+          <select id="shoeSelect" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+            <option value="" disabled selected>選択してください</option>
+          </select>
+          <div id="addShoeInline" style="display:none; margin-top:8px;">
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="newShoeInput" placeholder="新しいシューズ名" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+              <button type="button" id="confirmAddShoe" style="flex:none; background:var(--accent); color:var(--accent-text); border:none; border-radius:10px; padding:0 16px; font-size:14px; font-weight:700;">追加</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="field hidden" id="repsSetsRestField">
+      <label>回数・セット数・レスト</label>
+      <input type="text" id="fRepsSetsRest" placeholder="例：10回×3セット, レスト60秒">
+    </div>
+    <div class="field" id="setField">
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label>具体的な距離・本数</label>
+          <input type="text" id="fSetDistance" placeholder="例：400m×10, 1000m×5">
+        </div>
+        <div style="flex:1;">
+          <label>Wind Sprint</label>
+          <input type="text" id="fWindSprint" placeholder="例：100m×6">
+        </div>
+      </div>
+    </div>
+    <div class="field hidden" id="raceTimeField">
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label>目標タイム</label>
+          <input type="text" id="fRaceTargetTime" placeholder="例：15:30">
+        </div>
+        <div style="flex:1;">
+          <label>結果タイム</label>
+          <input type="text" id="fRaceResultTime" placeholder="例：15:42">
+        </div>
+      </div>
+    </div>
+    <div class="field hidden" id="raceResultField">
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label>結果</label>
+          <select id="fRaceResultType" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+            <option value="">選択</option>
+            <option value="PB">PB</option>
+            <option value="SB">SB</option>
+            <option value="初">初</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label>順位</label>
+          <input type="text" id="fRacePlace" placeholder="例：3">
+        </div>
+      </div>
+    </div>
+    <div class="field" id="pacingRowField">
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label>設定ペース</label>
+          <input type="text" id="fTargetPace" placeholder="例：70秒/400m, 3'20/km">
+        </div>
+        <div style="flex:1;">
+          <label>実際のラップタイム</label>
+          <input type="text" id="fActualLap" placeholder="例：72, 71, 70, 69, 70">
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label>場所</label>
+          <input type="text" id="fLocation" placeholder="例：河川敷, ○○競技場">
+        </div>
+        <div class="field" style="flex:1; margin-bottom:0;" id="surfaceField">
+          <label>サーフェス</label>
+          <select id="surfaceSelect" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+            <option value="" disabled selected>選択してください</option>
+          </select>
+          <div id="addSurfaceInline" style="display:none; margin-top:8px;">
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="newSurfaceInput" placeholder="新しいサーフェス名" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+              <button type="button" id="confirmAddSurface" style="flex:none; background:var(--accent); color:var(--accent-text); border:none; border-radius:10px; padding:0 16px; font-size:14px; font-weight:700;">追加</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="field" id="weatherField">
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label>天気</label>
+          <select id="fWeather" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+            <option value="" disabled selected>選択</option>
+            <option value="晴">晴</option>
+            <option value="曇">曇</option>
+            <option value="雨">雨</option>
+            <option value="雪">雪</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label>気温（℃）</label>
+          <input type="number" id="fTemperature" placeholder="例：18">
+        </div>
+        <div style="flex:1;">
+          <label>風</label>
+          <select id="fWind" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+            <option value="" disabled selected>選択</option>
+            <option value="無">無</option>
+            <option value="弱">弱</option>
+            <option value="強">強</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field" id="upDownField">
+      <label>アップ・ダウン</label>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <div style="flex:1;">
+          <label style="font-size:11px;">アップ距離(km)</label>
+          <input type="number" id="fUpDist" step="0.1" min="0" placeholder="例：2.0">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:11px;">アップ時間(分)</label>
+          <input type="number" id="fUpTime" min="0" placeholder="例：15">
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label style="font-size:11px;">ダウン距離(km)</label>
+          <input type="number" id="fDownDist" step="0.1" min="0" placeholder="例：1.5">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:11px;">ダウン時間(分)</label>
+          <input type="number" id="fDownTime" min="0" placeholder="例：10">
+        </div>
+      </div>
+    </div>
+    <div class="field" id="distTimeField">
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;" id="fDistNormalWrap">
+          <label>距離（km）</label>
+          <input type="number" id="fDist" inputmode="decimal" step="0.1" min="0" placeholder="例：10.5">
+        </div>
+        <div style="flex:1; display:none;" id="fDistRaceWrap">
+          <label>距離</label>
+          <select id="fRaceDistance" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+            <option value="" disabled selected>選択</option>
+            <option value="800m">800m</option>
+            <option value="1000m">1000m</option>
+            <option value="1500m">1500m</option>
+            <option value="3000m">3000m</option>
+            <option value="5000m">5000m</option>
+            <option value="10000m">10000m</option>
+            <option value="1mile">1mile</option>
+            <option value="5km">5km</option>
+            <option value="10km">10km</option>
+            <option value="ハーフマラソン">ハーフマラソン</option>
+            <option value="フルマラソン">フルマラソン</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label>時間（分）</label>
+          <input type="number" id="fTimeMin" min="0" placeholder="例：45">
+        </div>
+      </div>
+    </div>
+    <div class="field" id="paceField">
+      <label>平均ペース（分:秒/km）</label>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <input type="number" id="fPaceMin" min="0" placeholder="分" style="flex:1;">
+        <span style="color:var(--text-dim);">:</span>
+        <input type="number" id="fPaceSec" min="0" max="59" placeholder="秒" style="flex:1;">
+        <span style="color:var(--text-dim); font-size:13px; white-space:nowrap;">/km</span>
+      </div>
+    </div>
+    <div class="field" id="hrField">
+      <label>平均心拍 / 最大心拍（bpm）</label>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <input type="number" id="fAvgHr" min="0" placeholder="平均 例：145" style="flex:1;">
+        <input type="number" id="fMaxHr" min="0" placeholder="最大 例：172" style="flex:1;">
+      </div>
+    </div>
+    <div class="field" id="rpeField">
+      <label>主観強度（RPE）</label>
+      <div class="rpe-grid" id="rpeGrid"></div>
+      <div class="rpe-hint" id="rpeHint">&nbsp;</div>
+    </div>
+    <div class="field">
+      <label>コメント</label>
+      <textarea id="fComment" placeholder="調子、天気、ペースなど"></textarea>
+    </div>
+    <div class="field hidden" id="rirField">
+      <label>RIR</label>
+      <input type="text" id="fRir" placeholder="例：2, @8">
+    </div>
+
+    <button class="btn-primary" id="saveEntry">保存</button>
+    <button class="btn-danger-outline" id="deleteEntryBtn" style="display:none;">この記録を削除</button>
+    <button class="btn-secondary" id="cancelEntry">キャンセル</button>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="profileBackdrop">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3>プロフィール</h3>
+      <button id="closeProfileSheet">閉じる</button>
+    </div>
+    <div id="profileListContent"></div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <input type="text" id="newProfileInput" placeholder="新しいプロフィール名" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+      <button type="button" id="confirmAddProfile" style="flex:none; background:var(--accent); color:var(--accent-text); border:none; border-radius:10px; padding:0 16px; font-size:14px; font-weight:700;">追加</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="manageBackdrop">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3>種目・メニューの管理</h3>
+      <button id="closeManage">閉じる</button>
+    </div>
+    <div id="manageContent"></div>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="conditionBackdrop">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3 id="conditionSheetTitle">コンディション記録</h3>
+      <button id="closeConditionSheet">閉じる</button>
+    </div>
+
+    <div class="field">
+      <label>日付</label>
+      <input type="date" id="condDate">
+    </div>
+
+    <div class="field">
+      <label>睡眠</label>
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label style="font-size:11px;">開始</label>
+          <input type="time" id="condSleepStart">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:11px;">終了</label>
+          <input type="time" id="condSleepEnd">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:11px;">仮眠（分）</label>
+          <input type="number" id="condNapMin" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="sub" id="condSleepTotal" style="margin-top:8px; font-size:13px; color:var(--text-dim);">睡眠時間：-</div>
+    </div>
+
+    <div class="field">
+      <label>HRV</label>
+      <div class="menu-grid" id="condHrvGrid" style="grid-template-columns: repeat(5, 1fr);"></div>
+    </div>
+
+    <div class="field">
+      <label>疲労（1〜10）</label>
+      <div class="rpe-grid" id="condFatigueGrid"></div>
+      <div class="rpe-hint" id="condFatigueHint">&nbsp;</div>
+    </div>
+
+    <div class="field">
+      <label>痛みの有無</label>
+      <div id="condPainRows"></div>
+    </div>
+
+    <div class="field">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:0;">
+        <input type="checkbox" id="condTreatment" style="width:18px; height:18px; accent-color:var(--accent);">
+        <span>治療を受けた</span>
+      </label>
+    </div>
+
+    <div class="field">
+      <label>体重（kg）</label>
+      <input type="number" id="condWeight" inputmode="decimal" step="0.1" min="0" placeholder="例：62.3">
+    </div>
+
+    <button class="btn-primary" id="saveCondition">保存</button>
+    <button class="btn-danger-outline" id="deleteConditionBtn" style="display:none;">この記録を削除</button>
+    <button class="btn-secondary" id="cancelCondition">キャンセル</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'entries';
+let entries = [];
+let editingId = null;
+let selectedRpe = null;
+let selectedMenu = null;
+let currentCategory = 'Run';
+let customCategories = [];
+let extraItems = {};
+let customSurfaces = [];
+let customShoes = [];
+let selectedSurface = null;
+let selectedShoe = null;
+let profileList = ['自分'];
+let activeProfile = '自分';
+function scopedKey(base){ return `${base}__${activeProfile}`; }
+const SURFACE_BASE_ITEMS = ['ロード','トラック','クロカン','芝','土'];
+const SHOE_BASE_ITEMS = [];
+
+const CATEGORY_BASE = ['Run','トレーニング','Bike'];
+const RUN_BASE_ITEMS = ['Easy','Jog','LSD','Long Jog','Longrun','Moderate','Tempo','Threshold','Interval','Repetition','Speed','Sprint','Hill Sprint','Hill repeat','Race'];
+const BIKE_BASE_ITEMS = ['Easy','Long','Tempo','Interval','Sprint'];
+const CUSTOM_BASE_ITEMS = ['Easy','Long','Tempo','Interval','Speed'];
+const AUX_BASE_ITEMS = [];
+const COLOR_GROUPS = [
+  { name:'青', color:'var(--m-blue)', items:['Easy','Jog'] },
+  { name:'緑', color:'var(--m-green)', items:['LSD','Long Jog','Longrun'] },
+  { name:'黄緑', color:'var(--m-yellowgreen)', items:['Moderate','Tempo','Threshold'] },
+  { name:'黄色', color:'var(--m-yellow)', items:['Interval','Repetition'] },
+  { name:'オレンジ', color:'var(--m-orange)', items:['Speed','Sprint'] },
+  { name:'赤', color:'var(--m-red)', items:['Hill Sprint','Hill repeat'] },
+  { name:'ゴールド', color:'var(--m-gold)', items:['Race'] }
+];
+const RUN_COLORS = {};
+COLOR_GROUPS.forEach(g => g.items.forEach(item => { RUN_COLORS[item] = g.color; }));
+const ADD_CATEGORY_VAL = '__add_category__';
+const ADD_ITEM_VAL = '__add_item__';
+const ADD_SURFACE_VAL = '__add_surface__';
+const ADD_SHOE_VAL = '__add_shoe__';
+const ADD_LABEL = '＋ 選択肢を追加';
+
+function getBaseItems(cat){
+  if(cat==='Run') return RUN_BASE_ITEMS;
+  if(cat==='Bike') return BIKE_BASE_ITEMS;
+  if(cat==='トレーニング') return AUX_BASE_ITEMS;
+  return CUSTOM_BASE_ITEMS;
+}
+function getItemsForCategory(cat){
+  return [...getBaseItems(cat), ...(extraItems[cat]||[])];
+}
+function colorForItem(cat, item){
+  if(cat==='Run') return RUN_COLORS[item] || 'var(--border)';
+  if(cat==='Bike') return 'var(--cross)';
+  if(cat==='トレーニング') return 'var(--aux)';
+  return 'var(--customcat)';
+}
+
+const RPE_LABELS = {1:'とても楽',2:'とても楽',3:'楽',4:'楽',5:'ややきつい',6:'ややきつい',7:'きつい',8:'きつい',9:'全力',10:'全力'};
+function rpeColor(rpe){
+  if(rpe<=2) return 'var(--z1)';
+  if(rpe<=4) return 'var(--z2)';
+  if(rpe<=6) return 'var(--z3)';
+  if(rpe<=8) return 'var(--z4)';
+  return 'var(--z5)';
+}
+
+const hasCloudStorage = (typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function todayStr(){
+  const d = new Date();
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off*60000);
+  return local.toISOString().slice(0,10);
+}
+function daysAgoStr(n){
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off*60000);
+  return local.toISOString().slice(0,10);
+}
+
+async function loadEntries(){
+  if(hasCloudStorage){
+    try{
+      const res = await window.storage.get(scopedKey(STORAGE_KEY), false);
+      entries = res && res.value ? JSON.parse(res.value) : [];
+      return;
+    }catch(e){ /* fall through */ }
+  }
+  try{
+    const raw = localStorage.getItem('running_log_' + scopedKey(STORAGE_KEY));
+    entries = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    entries = [];
+  }
+}
+async function saveEntries(){
+  if(hasCloudStorage){
+    try{
+      await window.storage.set(scopedKey(STORAGE_KEY), JSON.stringify(entries), false);
+      return;
+    }catch(e){ /* fall through */ }
+  }
+  try{
+    localStorage.setItem('running_log_' + scopedKey(STORAGE_KEY), JSON.stringify(entries));
+  }catch(e){
+    showToast('保存に失敗しました');
+  }
+}
+
+const MENU_CONFIG_KEY = 'menuConfig';
+async function loadMenuConfig(){
+  let cfg = null;
+  if(hasCloudStorage){
+    try{
+      const res = await window.storage.get(scopedKey(MENU_CONFIG_KEY), false);
+      cfg = res && res.value ? JSON.parse(res.value) : null;
+    }catch(e){ /* fall through */ }
+  }
+  if(cfg === null){
+    try{
+      const raw = localStorage.getItem('running_log_' + scopedKey(MENU_CONFIG_KEY));
+      cfg = raw ? JSON.parse(raw) : null;
+    }catch(e){ /* ignore */ }
+  }
+  customCategories = (cfg && cfg.customCategories) || [];
+  extraItems = (cfg && cfg.extraItems) || {};
+  customSurfaces = (cfg && cfg.customSurfaces) || [];
+  customShoes = (cfg && cfg.customShoes) || [];
+}
+async function saveMenuConfig(){
+  const payload = JSON.stringify({ customCategories, extraItems, customSurfaces, customShoes });
+  if(hasCloudStorage){
+    try{
+      await window.storage.set(scopedKey(MENU_CONFIG_KEY), payload, false);
+      return;
+    }catch(e){ /* fall through */ }
+  }
+  try{
+    localStorage.setItem('running_log_' + scopedKey(MENU_CONFIG_KEY), payload);
+  }catch(e){ /* ignore */ }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+function computeSum(days){
+  const cutoff = daysAgoStr(days - 1);
+  const today = todayStr();
+  return entries
+    .filter(e => e.date >= cutoff && e.date <= today && (e.category||'Run') === 'Run')
+    .reduce((s,e)=> s + Number(e.distance||0), 0);
+}
+
+function computeTotalTime(days){
+  const cutoff = daysAgoStr(days - 1);
+  const today = todayStr();
+  return entries
+    .filter(e => e.date >= cutoff && e.date <= today)
+    .reduce((s,e)=> s + Number(e.timeMin||0) + Number(e.upTime||0) + Number(e.downTime||0), 0);
+}
+
+function computeACWR(){
+  const acute = computeSum(7);
+  const chronicWeeklyAvg = computeSum(28) / 4;
+  if(chronicWeeklyAvg === 0) return null;
+  return acute / chronicWeeklyAvg;
+}
+
+function acwrColor(v){
+  if(v < 0.8) return 'var(--rest)';
+  if(v <= 1.3) return 'var(--z2)';
+  if(v <= 1.5) return 'var(--z4)';
+  return 'var(--z5)';
+}
+function acwrLabel(v){
+  if(v < 0.8) return '負荷やや低め';
+  if(v <= 1.3) return '適正範囲';
+  if(v <= 1.5) return 'やや注意';
+  return '負荷急増・注意';
+}
+
+// ---- calendar ----
+let viewYear, viewMonth; // viewMonth: 0-11
+
+function initView(){
+  const d = new Date();
+  viewYear = d.getFullYear();
+  viewMonth = d.getMonth();
+}
+
+function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
+
+function entriesForDate(dateStr){
+  return entries.filter(e=>e.date===dateStr);
+}
+
+function renderDashboard(){
+  document.getElementById('sum7').innerHTML = computeSum(7).toFixed(1) + '<span>km</span>';
+  document.getElementById('sum30').innerHTML = computeSum(30).toFixed(1) + '<span>km</span>';
+
+  const totalTime7 = computeTotalTime(7);
+  const th = Math.floor(totalTime7/60), tm = Math.round(totalTime7%60);
+  document.getElementById('time7').innerHTML = (th>0 ? `${th}<span>時間</span>${tm}<span>分</span>` : `${tm}<span>分</span>`);
+
+  const acwr = computeACWR();
+  const acwrEl = document.getElementById('acwr');
+  const acwrSubEl = document.getElementById('acwrSub');
+  if(acwr === null){
+    acwrEl.textContent = '-';
+    acwrEl.style.color = '';
+    acwrSubEl.textContent = '\u00a0';
+  } else {
+    acwrEl.textContent = acwr.toFixed(2);
+    acwrEl.style.color = acwrColor(acwr);
+    acwrSubEl.textContent = acwrLabel(acwr);
+  }
+}
+
+let ratioMetric = 'distance';
+
+function formatRatioValue(val, metric){
+  if(metric === 'frequency') return `${val}回`;
+  if(metric === 'time'){
+    const h = Math.floor(val/60), m = Math.round(val%60);
+    return `${h}時間${m}分`;
+  }
+  return `${val.toFixed(1)}km`;
+}
+
+function computeColorGroupTotals(metric){
+  const monthPrefix = `${viewYear}-${pad2(viewMonth+1)}`;
+  const totals = COLOR_GROUPS.map(()=>0);
+  const blueIdx = COLOR_GROUPS.findIndex(g => g.name === '青');
+
+  entries.forEach(e=>{
+    if((e.category||'Run') !== 'Run') return;
+    if(!e.date.startsWith(monthPrefix)) return;
+
+    const idx = COLOR_GROUPS.findIndex(g => g.items.includes(e.menu));
+    if(idx !== -1){
+      if(metric === 'distance') totals[idx] += Number(e.distance||0);
+      else if(metric === 'frequency') totals[idx] += 1;
+      else if(metric === 'time') totals[idx] += Number(e.timeMin||0);
+    }
+
+    // アップ・ダウンは青（Easy/Jog）扱いで距離・時間に加算（頻度には加算しない）
+    if(blueIdx !== -1){
+      if(metric === 'distance') totals[blueIdx] += Number(e.upDist||0) + Number(e.downDist||0);
+      else if(metric === 'time') totals[blueIdx] += Number(e.upTime||0) + Number(e.downTime||0);
+    }
+  });
+
+  return totals;
+}
+
+function renderColorBreakdown(){
+  document.getElementById('colorRatioMonthLabel').textContent = `${viewYear}年${viewMonth+1}月`;
+
+  const totals = computeColorGroupTotals(ratioMetric);
+  const grandTotal = totals.reduce((s,v)=>s+v, 0);
+
+  const el = document.getElementById('colorRatioChart');
+  if(grandTotal <= 0){
+    el.innerHTML = `<div class="empty" style="padding:8px 0;">この月のRunの記録がありません</div>`;
+    return;
+  }
+
+  let barHtml = '<div class="ratio-bar">';
+  COLOR_GROUPS.forEach((g,idx)=>{
+    if(totals[idx] <= 0) return;
+    const pct = (totals[idx]/grandTotal*100);
+    barHtml += `<div class="seg" style="width:${pct}%; background:${g.color};"></div>`;
+  });
+  barHtml += '</div>';
+
+  let legendHtml = '<div class="ratio-legend">';
+  COLOR_GROUPS.forEach((g,idx)=>{
+    if(totals[idx] <= 0) return;
+    const pct = (totals[idx]/grandTotal*100);
+    const itemsLabel = (g.name==='青') ? `${g.items.join('/')}, アップ・ダウン` : g.items.join('/');
+    legendHtml += `
+      <div class="row">
+        <span class="dot" style="background:${g.color};"></span>
+        <span class="name">${g.name}（${itemsLabel}）</span>
+        <span class="pct">${pct.toFixed(0)}%</span>
+        <span class="km">${formatRatioValue(totals[idx], ratioMetric)}</span>
+      </div>`;
+  });
+  legendHtml += '</div>';
+
+  el.innerHTML = barHtml + legendHtml;
+}
+
+document.getElementById('ratioMetricSelect').addEventListener('change', (e)=>{
+  ratioMetric = e.target.value;
+  renderColorBreakdown();
+});
+
+const RACE_DISTANCE_ORDER = ['800m','1000m','1500m','3000m','5000m','10000m','1mile','5km','10km','ハーフマラソン','フルマラソン'];
+function renderPbTable(){
+  const el = document.getElementById('pbTable');
+  const pbEntries = entries.filter(e => (e.category||'Run')==='Run' && e.menu==='Race' && e.raceResultType==='PB' && e.raceDistance);
+
+  const byDistance = {};
+  pbEntries.forEach(e=>{
+    if(!byDistance[e.raceDistance] || e.date > byDistance[e.raceDistance].date){
+      byDistance[e.raceDistance] = e;
+    }
+  });
+
+  const rows = RACE_DISTANCE_ORDER.filter(d => byDistance[d]);
+  if(rows.length === 0){
+    el.innerHTML = `<div class="empty" style="padding:8px 0;">まだPBの記録がありません</div>`;
+    return;
+  }
+
+  el.innerHTML = rows.map(d=>{
+    const e = byDistance[d];
+    const dt = new Date(e.date + 'T00:00:00');
+    const dateLabel = `${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()}`;
+    return `
+      <div class="day-row">
+        <div class="date-col" style="width:64px;">${escapeHtml(d)}</div>
+        <div class="mid-col"><span class="comment-hint">${dateLabel}</span></div>
+        <div class="right-col">${escapeHtml(e.raceResultTime || '-')}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderCalendar(){
+  document.getElementById('monthLabel').textContent = `${viewYear}年${viewMonth+1}月`;
+  const cal = document.getElementById('calendar');
+  const total = daysInMonth(viewYear, viewMonth);
+  const today = todayStr();
+  const dowChars = ['日','月','火','水','木','金','土'];
+
+  let html = '';
+  for(let day=1; day<=total; day++){
+    const dateStr = `${viewYear}-${pad2(viewMonth+1)}-${pad2(day)}`;
+    const d = new Date(viewYear, viewMonth, day);
+    const dow = dowChars[d.getDay()];
+    const isToday = dateStr === today;
+
+    // ---- training half ----
+    const dayEntries = entriesForDate(dateStr);
+    let trainHtml;
+    if(dayEntries.length === 0){
+      trainHtml = `<div class="mid-col"><span class="placeholder">記録なし</span></div><div class="right-col"></div>`;
+    } else {
+      const distSum = dayEntries.reduce((s,e)=>s+Number(e.distance||0),0);
+      const chipsHtml = dayEntries.map(e=>{
+        const label = e.menu || '';
+        const color = colorForItem(e.category || 'Run', label);
+        const todAbbr = TIME_OF_DAY_ABBR[e.timeOfDay] || '';
+        const displayLabel = todAbbr ? `${label}(${todAbbr})` : label;
+        return `<span class="menu-chip" style="background:${color}" onclick="openEntryById('${e.id}', event)">${escapeHtml(displayLabel)}</span>`;
+      }).join('') + `<span class="menu-chip" style="background:var(--surface-2); color:var(--text-dim); border:1px dashed var(--border);" onclick="openAddForDate('${dateStr}', event)">＋</span>`;
+      const commentParts = [];
+      dayEntries.forEach(e=>{ if(e.setDistance) commentParts.push(e.setDistance); });
+      dayEntries.forEach(e=>{ if(e.comment) commentParts.push(e.comment); });
+      const commentText = commentParts.join(' / ');
+      const single = dayEntries.length === 1 ? dayEntries[0] : null;
+      trainHtml = `
+        <div class="mid-col">
+          ${chipsHtml}
+          ${commentText ? `<span class="comment-hint">${escapeHtml(commentText)}</span>` : ''}
+        </div>
+        <div class="right-col">
+          ${distSum>0 ? distSum.toFixed(1)+'km' : ''}
+          ${(single && single.paceMin!=null && single.paceSec!=null) ? `<span class="rpe">${single.paceMin}:${String(single.paceSec).padStart(2,'0')}/km</span>` : ''}
+          ${(single && single.rpe) ? `<span class="rpe">RPE ${single.rpe}</span>` : ''}
+        </div>`;
+    }
+
+    // ---- condition half ----
+    const cond = conditions[dateStr];
+    let condHtml;
+    if(!cond){
+      condHtml = `<div class="mid-col"><span class="placeholder">-</span></div><div class="right-col"></div>`;
+    } else {
+      const parts = [];
+      if(cond.sleepTotalMin != null){
+        const h = Math.floor(cond.sleepTotalMin/60), m = cond.sleepTotalMin%60;
+        parts.push(`睡眠${h}:${String(m).padStart(2,'0')}`);
+      }
+      if(cond.fatigue != null) parts.push(`疲労${cond.fatigue}`);
+      const hrvChip = cond.hrv != null ? `<span class="menu-chip" style="background:${HRV_COLORS[cond.hrv]}">HRV${HRV_LEVELS[cond.hrv]}</span>` : '';
+      const painChip = (cond.pains && cond.pains.length>0) ? `<span class="menu-chip" style="background:var(--z5)">痛み</span>` : '';
+      const treatmentChip = cond.treatment ? `<span class="menu-chip" style="background:var(--aux)">治療</span>` : '';
+      condHtml = `
+        <div class="mid-col">
+          ${hrvChip}${painChip}${treatmentChip}
+          ${parts.length ? `<span class="comment-hint">${escapeHtml(parts.join(' ・ '))}</span>` : ''}
+        </div>
+        <div class="right-col">${cond.weight != null ? cond.weight.toFixed(1)+'kg' : ''}</div>`;
+    }
+
+    html += `
+      <div class="day-row ${dayEntries.length===0?'empty':''} ${isToday?'today':''}">
+        <div class="date-col">${viewMonth+1}/${day}<div class="dow">${dow}</div></div>
+        <div class="train-col" onclick="handleRowTap('${dateStr}')">${trainHtml}</div>
+        <div class="cond-col" onclick="openConditionSheet('${dateStr}')">${condHtml}</div>
+      </div>`;
+  }
+  cal.innerHTML = html;
+}
+
+function openEntryById(id, ev){
+  if(ev) ev.stopPropagation();
+  const e = entries.find(x=>x.id===id);
+  if(e) openSheet(e);
+}
+
+function openAddForDate(dateStr, ev){
+  if(ev) ev.stopPropagation();
+  openSheet(null, dateStr);
+}
+
+function handleRowTap(dateStr){
+  const dayEntries = entriesForDate(dateStr);
+  if(dayEntries.length > 0){
+    openSheet(dayEntries[0]);
+  } else {
+    openSheet(null, dateStr);
+  }
+}
+
+function escapeHtml(s){
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+// ---- category & menu select ----
+function buildCategorySelect(){
+  const sel = document.getElementById('categorySelect');
+  sel.innerHTML = '';
+  [...CATEGORY_BASE, ...customCategories].forEach(cat=>{
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    sel.appendChild(opt);
+  });
+  const addOpt = document.createElement('option');
+  addOpt.value = ADD_CATEGORY_VAL;
+  addOpt.textContent = ADD_LABEL;
+  sel.appendChild(addOpt);
+}
+
+function buildMenuSelectFor(cat){
+  const sel = document.getElementById('menuSelect');
+  sel.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = '選択してください';
+  sel.appendChild(placeholder);
+  getItemsForCategory(cat).forEach(item=>{
+    const opt = document.createElement('option');
+    opt.value = item;
+    opt.textContent = item;
+    sel.appendChild(opt);
+  });
+  const addOpt = document.createElement('option');
+  addOpt.value = ADD_ITEM_VAL;
+  addOpt.textContent = ADD_LABEL;
+  sel.appendChild(addOpt);
+  sel.style.borderLeft = '';
+}
+
+async function handleCategoryChange(val){
+  if(val === ADD_CATEGORY_VAL){
+    document.getElementById('addItemInline').style.display = 'none';
+    const inline = document.getElementById('addCategoryInline');
+    inline.style.display = 'block';
+    const input = document.getElementById('newCategoryInput');
+    input.value = '';
+    input.focus();
+    return;
+  }
+  document.getElementById('addCategoryInline').style.display = 'none';
+  currentCategory = val;
+  selectedMenu = null;
+  buildMenuSelectFor(currentCategory);
+  applyCategoryFieldVisibility();
+}
+
+async function confirmAddCategory(){
+  const input = document.getElementById('newCategoryInput');
+  const name = input.value.trim();
+  const allCats = [...CATEGORY_BASE, ...customCategories];
+  if(!name){ showToast('種目名を入力してください'); return; }
+  if(allCats.includes(name)){ showToast('同じ名前の種目があります'); return; }
+  customCategories.push(name);
+  await saveMenuConfig();
+  buildCategorySelect();
+  document.getElementById('categorySelect').value = name;
+  currentCategory = name;
+  document.getElementById('addCategoryInline').style.display = 'none';
+  selectedMenu = null;
+  buildMenuSelectFor(currentCategory);
+  applyCategoryFieldVisibility();
+  showToast('種目を追加しました');
+}
+
+async function handleMenuChange(val){
+  if(val === ADD_ITEM_VAL){
+    document.getElementById('addCategoryInline').style.display = 'none';
+    const inline = document.getElementById('addItemInline');
+    inline.style.display = 'block';
+    const input = document.getElementById('newItemInput');
+    input.value = '';
+    input.focus();
+    return;
+  }
+  document.getElementById('addItemInline').style.display = 'none';
+  selectMenuItem(val);
+}
+
+async function confirmAddItem(){
+  const input = document.getElementById('newItemInput');
+  const name = input.value.trim();
+  const existing = getItemsForCategory(currentCategory);
+  if(!name){ showToast('メニュー名を入力してください'); return; }
+  if(existing.includes(name)){ showToast('同じ名前のメニューがあります'); return; }
+  if(!extraItems[currentCategory]) extraItems[currentCategory] = [];
+  extraItems[currentCategory].push(name);
+  await saveMenuConfig();
+  buildMenuSelectFor(currentCategory);
+  selectMenuItem(name);
+  document.getElementById('addItemInline').style.display = 'none';
+  showToast('メニューを追加しました');
+}
+
+document.getElementById('confirmAddCategory').addEventListener('click', confirmAddCategory);
+document.getElementById('confirmAddItem').addEventListener('click', confirmAddItem);
+document.getElementById('newCategoryInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); confirmAddCategory(); } });
+document.getElementById('newItemInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); confirmAddItem(); } });
+
+// ---- surface & shoe selects ----
+function buildSurfaceSelect(){
+  const sel = document.getElementById('surfaceSelect');
+  sel.innerHTML = '<option value="" disabled selected>選択してください</option>';
+  [...SURFACE_BASE_ITEMS, ...customSurfaces].forEach(item=>{
+    const opt = document.createElement('option');
+    opt.value = item; opt.textContent = item;
+    sel.appendChild(opt);
+  });
+  const addOpt = document.createElement('option');
+  addOpt.value = ADD_SURFACE_VAL; addOpt.textContent = ADD_LABEL;
+  sel.appendChild(addOpt);
+}
+function buildShoeSelect(){
+  const sel = document.getElementById('shoeSelect');
+  sel.innerHTML = '<option value="" disabled selected>選択してください</option>';
+  [...SHOE_BASE_ITEMS, ...customShoes].forEach(item=>{
+    const opt = document.createElement('option');
+    opt.value = item; opt.textContent = item;
+    sel.appendChild(opt);
+  });
+  const addOpt = document.createElement('option');
+  addOpt.value = ADD_SHOE_VAL; addOpt.textContent = ADD_LABEL;
+  sel.appendChild(addOpt);
+}
+
+function handleSurfaceChange(val){
+  if(val === ADD_SURFACE_VAL){
+    const inline = document.getElementById('addSurfaceInline');
+    inline.style.display = 'block';
+    const input = document.getElementById('newSurfaceInput');
+    input.value = '';
+    input.focus();
+    return;
+  }
+  document.getElementById('addSurfaceInline').style.display = 'none';
+  selectedSurface = val;
+}
+async function confirmAddSurface(){
+  const input = document.getElementById('newSurfaceInput');
+  const name = input.value.trim();
+  const existing = [...SURFACE_BASE_ITEMS, ...customSurfaces];
+  if(!name){ showToast('サーフェス名を入力してください'); return; }
+  if(existing.includes(name)){ showToast('同じ名前のサーフェスがあります'); return; }
+  customSurfaces.push(name);
+  await saveMenuConfig();
+  buildSurfaceSelect();
+  document.getElementById('surfaceSelect').value = name;
+  selectedSurface = name;
+  document.getElementById('addSurfaceInline').style.display = 'none';
+  showToast('サーフェスを追加しました');
+}
+
+function handleShoeChange(val){
+  if(val === ADD_SHOE_VAL){
+    const inline = document.getElementById('addShoeInline');
+    inline.style.display = 'block';
+    const input = document.getElementById('newShoeInput');
+    input.value = '';
+    input.focus();
+    return;
+  }
+  document.getElementById('addShoeInline').style.display = 'none';
+  selectedShoe = val;
+}
+async function confirmAddShoe(){
+  const input = document.getElementById('newShoeInput');
+  const name = input.value.trim();
+  const existing = [...SHOE_BASE_ITEMS, ...customShoes];
+  if(!name){ showToast('シューズ名を入力してください'); return; }
+  if(existing.includes(name)){ showToast('同じ名前のシューズがあります'); return; }
+  customShoes.push(name);
+  await saveMenuConfig();
+  buildShoeSelect();
+  document.getElementById('shoeSelect').value = name;
+  selectedShoe = name;
+  document.getElementById('addShoeInline').style.display = 'none';
+  showToast('シューズを追加しました');
+}
+
+document.getElementById('surfaceSelect').addEventListener('change', (e)=> handleSurfaceChange(e.target.value));
+document.getElementById('shoeSelect').addEventListener('change', (e)=> handleShoeChange(e.target.value));
+document.getElementById('confirmAddSurface').addEventListener('click', confirmAddSurface);
+document.getElementById('confirmAddShoe').addEventListener('click', confirmAddShoe);
+document.getElementById('newSurfaceInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); confirmAddSurface(); } });
+document.getElementById('newShoeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); confirmAddShoe(); } });
+
+function selectMenuItem(name){
+  selectedMenu = name;
+  const sel = document.getElementById('menuSelect');
+  sel.value = name;
+  sel.style.borderLeft = '4px solid ' + colorForItem(currentCategory, name);
+  applyCategoryFieldVisibility();
+}
+
+function isBlueOrGreenMenu(menu){
+  const items = COLOR_GROUPS.filter(g => g.name==='青' || g.name==='緑').flatMap(g=>g.items);
+  return items.includes(menu);
+}
+
+function applyCategoryFieldVisibility(){
+  const isTraining = (currentCategory === 'トレーニング');
+  const isRun = (currentCategory === 'Run');
+  const isRace = (selectedMenu === 'Race');
+  const runFieldIds = ['pacingRowField','surfaceField','weatherField','shoeField','distTimeField','paceField','hrField','rpeField'];
+  runFieldIds.forEach(id=>{
+    document.getElementById(id).classList.toggle('hidden', isTraining);
+  });
+  document.getElementById('setField').classList.toggle('hidden', isTraining || isRace);
+  document.getElementById('raceTimeField').classList.toggle('hidden', !isRace);
+  document.getElementById('raceResultField').classList.toggle('hidden', !isRace);
+  document.getElementById('fDistNormalWrap').style.display = isRace ? 'none' : 'block';
+  document.getElementById('fDistRaceWrap').style.display = isRace ? 'block' : 'none';
+  const hideUpDown = !isRun || isBlueOrGreenMenu(selectedMenu);
+  document.getElementById('upDownField').classList.toggle('hidden', hideUpDown);
+  document.getElementById('drillField').classList.toggle('hidden', !isRun);
+  const trainingFieldIds = ['repsSetsRestField','rirField'];
+  trainingFieldIds.forEach(id=>{
+    document.getElementById(id).classList.toggle('hidden', !isTraining);
+  });
+}
+
+document.getElementById('categorySelect').addEventListener('change', (e)=> handleCategoryChange(e.target.value));
+document.getElementById('menuSelect').addEventListener('change', (e)=> handleMenuChange(e.target.value));
+
+// ---- manage custom categories & items ----
+function renderManageContent(){
+  const el = document.getElementById('manageContent');
+  el.innerHTML = '';
+
+  const catHeader = document.createElement('div');
+  catHeader.style.cssText = 'font-size:13px;color:var(--text-dim);margin-bottom:8px;';
+  catHeader.textContent = '追加した種目';
+  el.appendChild(catHeader);
+
+  if(customCategories.length === 0){
+    const p = document.createElement('div');
+    p.className = 'empty';
+    p.style.padding = '8px 0';
+    p.textContent = 'まだ追加した種目はありません';
+    el.appendChild(p);
+  } else {
+    customCategories.forEach(cat=>{
+      const row = document.createElement('div');
+      row.className = 'day-row';
+      row.innerHTML = `<div class="mid-col"><span class="menu-chip" style="background:var(--customcat); cursor:default;"></span></div><div class="right-col"><button style="background:none;border:none;color:var(--danger);font-size:12px;text-decoration:underline;">削除</button></div>`;
+      row.querySelector('.menu-chip').textContent = cat;
+      wireDoubleConfirm(row.querySelector('button'), 'タップで確定', ()=> deleteCategory(cat));
+      el.appendChild(row);
+    });
+  }
+
+  const itemHeader = document.createElement('div');
+  itemHeader.style.cssText = 'font-size:13px;color:var(--text-dim);margin:16px 0 8px;';
+  itemHeader.textContent = '追加したメニュー';
+  el.appendChild(itemHeader);
+
+  const allCats = [...CATEGORY_BASE, ...customCategories];
+  let any = false;
+  allCats.forEach(cat=>{
+    (extraItems[cat]||[]).forEach(item=>{
+      any = true;
+      const row = document.createElement('div');
+      row.className = 'day-row';
+      row.innerHTML = `<div class="mid-col"><span class="menu-chip" style="cursor:default;"></span></div><div class="right-col"><button style="background:none;border:none;color:var(--danger);font-size:12px;text-decoration:underline;">削除</button></div>`;
+      const chip = row.querySelector('.menu-chip');
+      chip.style.background = colorForItem(cat, item);
+      chip.textContent = `${cat} ・ ${item}`;
+      wireDoubleConfirm(row.querySelector('button'), 'タップで確定', ()=> deleteItem(cat, item));
+      el.appendChild(row);
+    });
+  });
+  if(!any){
+    const p = document.createElement('div');
+    p.className = 'empty';
+    p.style.padding = '8px 0';
+    p.textContent = 'まだ追加したメニューはありません';
+    el.appendChild(p);
+  }
+}
+
+async function deleteCategory(cat){
+  customCategories = customCategories.filter(c=>c!==cat);
+  delete extraItems[cat];
+  await saveMenuConfig();
+  buildCategorySelect();
+  if(currentCategory === cat){
+    currentCategory = 'Run';
+    document.getElementById('categorySelect').value = 'Run';
+    buildMenuSelectFor('Run');
+  }
+  renderManageContent();
+  showToast('削除しました');
+}
+
+async function deleteItem(cat, item){
+  extraItems[cat] = (extraItems[cat]||[]).filter(i=>i!==item);
+  await saveMenuConfig();
+  if(currentCategory === cat){
+    buildMenuSelectFor(cat);
+  }
+  renderManageContent();
+  showToast('削除しました');
+}
+
+document.getElementById('openManage').addEventListener('click', ()=>{
+  renderManageContent();
+  document.getElementById('manageBackdrop').classList.add('open');
+});
+document.getElementById('closeManage').addEventListener('click', ()=>{
+  document.getElementById('manageBackdrop').classList.remove('open');
+});
+document.getElementById('manageBackdrop').addEventListener('click', (ev)=>{
+  if(ev.target.id==='manageBackdrop') document.getElementById('manageBackdrop').classList.remove('open');
+});
+
+// ---- rpe grid ----
+function buildRpeGrid(){
+  const grid = document.getElementById('rpeGrid');
+  grid.innerHTML = '';
+  for(let i=1;i<=10;i++){
+    const btn = document.createElement('button');
+    btn.className = 'rpe-btn';
+    btn.type = 'button';
+    btn.textContent = i;
+    btn.dataset.rpe = i;
+    btn.addEventListener('click', ()=> selectRpe(i));
+    grid.appendChild(btn);
+  }
+}
+function selectRpe(i){
+  selectedRpe = i;
+  document.querySelectorAll('.rpe-btn').forEach(b=>{
+    const v = Number(b.dataset.rpe);
+    b.classList.toggle('selected', v===i);
+    b.style.background = v===i ? rpeColor(v) : '';
+  });
+  document.getElementById('rpeHint').textContent = `${i} ・ ${RPE_LABELS[i]}`;
+}
+
+// ---- condition tracking ----
+let conditions = {};
+let editingConditionDate = null;
+let selectedHrv = null;
+let selectedFatigue = null;
+let painRows = [];
+
+const TIME_OF_DAY_ABBR = { '朝練':'朝', '午前練':'前', '午後練':'後', '夜練':'夜' };
+const RACE_DISTANCE_KM = { '800m':0.8, '1000m':1.0, '1500m':1.5, '3000m':3.0, '5000m':5.0, '10000m':10.0, '1mile':1.60934, '5km':5.0, '10km':10.0, 'ハーフマラソン':21.0975, 'フルマラソン':42.195 };
+const HRV_LEVELS = ['低','やや低','普通','やや高','高'];
+const HRV_COLORS = ['var(--z5)','var(--z4)','var(--z3)','var(--z2)','var(--z1)'];
+
+const CONDITIONS_KEY = 'conditions';
+async function loadConditions(){
+  let raw = null;
+  if(hasCloudStorage){
+    try{
+      const res = await window.storage.get(scopedKey(CONDITIONS_KEY), false);
+      raw = res && res.value ? res.value : null;
+    }catch(e){ /* fall through */ }
+  }
+  if(raw === null){
+    try{ raw = localStorage.getItem('running_log_' + scopedKey(CONDITIONS_KEY)); }catch(e){ /* ignore */ }
+  }
+  conditions = {};
+  if(raw){
+    try{ conditions = JSON.parse(raw) || {}; }catch(e){ conditions = {}; }
+  }
+}
+async function saveConditions(){
+  const payload = JSON.stringify(conditions);
+  if(hasCloudStorage){
+    try{ await window.storage.set(scopedKey(CONDITIONS_KEY), payload, false); return; }catch(e){ /* fall through */ }
+  }
+  try{ localStorage.setItem('running_log_' + scopedKey(CONDITIONS_KEY), payload); }catch(e){ /* ignore */ }
+}
+
+let goals = { longTerm: '', shortTerm: '' };
+const GOALS_KEY = 'goals';
+async function loadGoals(){
+  let raw = null;
+  if(hasCloudStorage){
+    try{
+      const res = await window.storage.get(scopedKey(GOALS_KEY), false);
+      raw = res && res.value ? res.value : null;
+    }catch(e){ /* fall through */ }
+  }
+  if(raw === null){
+    try{ raw = localStorage.getItem('running_log_' + scopedKey(GOALS_KEY)); }catch(e){ /* ignore */ }
+  }
+  goals = { longTerm:'', shortTerm:'' };
+  if(raw){
+    try{ goals = JSON.parse(raw) || { longTerm:'', shortTerm:'' }; }catch(e){ /* ignore */ }
+  }
+  document.getElementById('goalLongTerm').value = goals.longTerm || '';
+  document.getElementById('goalShortTerm').value = goals.shortTerm || '';
+}
+async function saveGoals(){
+  const payload = JSON.stringify(goals);
+  if(hasCloudStorage){
+    try{ await window.storage.set(scopedKey(GOALS_KEY), payload, false); return; }catch(e){ /* fall through */ }
+  }
+  try{ localStorage.setItem('running_log_' + scopedKey(GOALS_KEY), payload); }catch(e){ /* ignore */ }
+}
+let goalSaveTimer = null;
+function scheduleGoalSave(){
+  clearTimeout(goalSaveTimer);
+  goalSaveTimer = setTimeout(()=>{
+    goals.longTerm = document.getElementById('goalLongTerm').value;
+    goals.shortTerm = document.getElementById('goalShortTerm').value;
+    saveGoals();
+  }, 500);
+}
+document.getElementById('goalLongTerm').addEventListener('input', scheduleGoalSave);
+document.getElementById('goalShortTerm').addEventListener('input', scheduleGoalSave);
+
+// ---- profiles ----
+const PROFILES_KEY = 'profiles';
+async function loadProfilesConfig(){
+  let raw = null;
+  if(hasCloudStorage){
+    try{ const res = await window.storage.get(PROFILES_KEY, false); raw = res && res.value ? res.value : null; }catch(e){ /* fall through */ }
+  }
+  if(raw === null){
+    try{ raw = localStorage.getItem('running_log_' + PROFILES_KEY); }catch(e){ /* ignore */ }
+  }
+  if(raw){
+    try{
+      const cfg = JSON.parse(raw);
+      if(cfg && cfg.profileList && cfg.profileList.length){
+        profileList = cfg.profileList;
+        activeProfile = cfg.activeProfile && profileList.includes(cfg.activeProfile) ? cfg.activeProfile : profileList[0];
+      }
+    }catch(e){ /* ignore */ }
+  }
+}
+async function saveProfilesConfig(){
+  const payload = JSON.stringify({ profileList, activeProfile });
+  if(hasCloudStorage){
+    try{ await window.storage.set(PROFILES_KEY, payload, false); return; }catch(e){ /* fall through */ }
+  }
+  try{ localStorage.setItem('running_log_' + PROFILES_KEY, payload); }catch(e){ /* ignore */ }
+}
+
+async function loadProfileData(){
+  customCategories = []; extraItems = {}; customSurfaces = []; customShoes = [];
+  entries = []; conditions = {}; goals = { longTerm:'', shortTerm:'' };
+
+  await loadMenuConfig();
+  buildCategorySelect();
+  currentCategory = 'Run';
+  document.getElementById('categorySelect').value = 'Run';
+  buildMenuSelectFor('Run');
+  buildSurfaceSelect();
+  buildShoeSelect();
+
+  await loadEntries();
+  await loadConditions();
+  await loadGoals();
+
+  document.getElementById('profileNameLabel').textContent = activeProfile;
+  renderDashboard();
+  renderColorBreakdown();
+  renderPbTable();
+  renderCalendar();
+}
+
+function renderProfileListContent(){
+  const el = document.getElementById('profileListContent');
+  el.innerHTML = '';
+  profileList.forEach(name=>{
+    const row = document.createElement('div');
+    row.className = 'day-row';
+    const isActive = (name === activeProfile);
+    row.innerHTML = `
+      <div class="mid-col">
+        <span class="menu-chip" style="background:${isActive ? 'var(--accent)' : 'var(--surface-2)'}; color:${isActive ? 'var(--accent-text)' : 'var(--text)'};"></span>
+      </div>
+      <div class="right-col"></div>`;
+    row.querySelector('.menu-chip').textContent = name + (isActive ? '（使用中）' : '');
+    const rightCol = row.querySelector('.right-col');
+    if(!isActive){
+      const switchBtn = document.createElement('button');
+      switchBtn.textContent = '切り替え';
+      switchBtn.style.cssText = 'background:none;border:none;color:var(--accent);font-size:12px;text-decoration:underline;margin-right:10px;';
+      switchBtn.addEventListener('click', ()=> switchProfile(name));
+      rightCol.appendChild(switchBtn);
+    }
+    if(profileList.length > 1){
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '削除';
+      delBtn.style.cssText = 'background:none;border:none;color:var(--danger);font-size:12px;text-decoration:underline;';
+      wireDoubleConfirm(delBtn, 'タップで確定', ()=> deleteProfile(name));
+      rightCol.appendChild(delBtn);
+    }
+    el.appendChild(row);
+  });
+}
+
+async function switchProfile(name){
+  if(name === activeProfile) return;
+  activeProfile = name;
+  await saveProfilesConfig();
+  await loadProfileData();
+  renderProfileListContent();
+  showToast(`「${name}」に切り替えました`);
+}
+
+async function deleteProfile(name){
+  if(profileList.length <= 1) return;
+  const keysToClean = [STORAGE_KEY, MENU_CONFIG_KEY, CONDITIONS_KEY, GOALS_KEY].map(k => `${k}__${name}`);
+  for(const k of keysToClean){
+    if(hasCloudStorage){
+      try{ await window.storage.delete(k, false); }catch(e){ /* ignore */ }
+    }
+    try{ localStorage.removeItem('running_log_' + k); }catch(e){ /* ignore */ }
+  }
+  profileList = profileList.filter(p => p !== name);
+  if(activeProfile === name){
+    activeProfile = profileList[0];
+    await saveProfilesConfig();
+    await loadProfileData();
+  } else {
+    await saveProfilesConfig();
+  }
+  renderProfileListContent();
+  showToast('削除しました');
+}
+
+async function confirmAddProfile(){
+  const input = document.getElementById('newProfileInput');
+  const name = input.value.trim();
+  if(!name){ showToast('プロフィール名を入力してください'); return; }
+  if(profileList.includes(name)){ showToast('同じ名前のプロフィールがあります'); return; }
+  profileList.push(name);
+  input.value = '';
+  await switchProfile(name);
+  await saveProfilesConfig();
+  renderProfileListContent();
+}
+
+document.getElementById('profileButton').addEventListener('click', ()=>{
+  renderProfileListContent();
+  document.getElementById('profileBackdrop').classList.add('open');
+});
+document.getElementById('closeProfileSheet').addEventListener('click', ()=>{
+  document.getElementById('profileBackdrop').classList.remove('open');
+});
+document.getElementById('profileBackdrop').addEventListener('click', (ev)=>{
+  if(ev.target.id==='profileBackdrop') document.getElementById('profileBackdrop').classList.remove('open');
+});
+document.getElementById('confirmAddProfile').addEventListener('click', confirmAddProfile);
+document.getElementById('newProfileInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); confirmAddProfile(); } });
+
+function buildHrvGrid(){
+  const grid = document.getElementById('condHrvGrid');
+  grid.innerHTML = '';
+  HRV_LEVELS.forEach((label, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'menu-btn';
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.dataset.idx = idx;
+    btn.addEventListener('click', ()=> selectHrv(idx));
+    grid.appendChild(btn);
+  });
+}
+function selectHrv(idx){
+  selectedHrv = idx;
+  document.getElementById('condHrvGrid').querySelectorAll('button').forEach(b=>{
+    const v = Number(b.dataset.idx);
+    b.classList.toggle('selected', v===idx);
+    b.style.background = v===idx ? HRV_COLORS[idx] : '';
+  });
+}
+
+function buildFatigueGrid(){
+  const grid = document.getElementById('condFatigueGrid');
+  grid.innerHTML = '';
+  for(let i=1;i<=10;i++){
+    const btn = document.createElement('button');
+    btn.className = 'scale-btn';
+    btn.type = 'button';
+    btn.textContent = i;
+    btn.dataset.val = i;
+    btn.addEventListener('click', ()=> selectFatigue(i));
+    grid.appendChild(btn);
+  }
+}
+function selectFatigue(i){
+  selectedFatigue = i;
+  document.getElementById('condFatigueGrid').querySelectorAll('button').forEach(b=>{
+    const v = Number(b.dataset.val);
+    b.classList.toggle('selected', v===i);
+    b.style.background = v===i ? rpeColor(v) : '';
+  });
+  document.getElementById('condFatigueHint').textContent = `${i} / 10`;
+}
+
+function renderPainRows(){
+  const container = document.getElementById('condPainRows');
+  container.innerHTML = '';
+  painRows.forEach((row, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'pain-row';
+    div.innerHTML = `
+      <div style="flex:2;">
+        <label style="font-size:11px;">部位</label>
+        <input type="text" placeholder="例：右ひざ" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:11px;">強さ（1〜10）</label>
+        <input type="number" min="1" max="10" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; font-family:inherit;">
+      </div>
+      ${painRows.length>1 ? `<button type="button" class="del-btn">✕</button>` : ''}
+    `;
+    const partInput = div.querySelector('input[type="text"]');
+    const levelInput = div.querySelector('input[type="number"]');
+    partInput.value = row.part || '';
+    levelInput.value = row.level || '';
+    partInput.addEventListener('input', ()=>{
+      painRows[idx].part = partInput.value;
+      if(idx === painRows.length-1 && partInput.value.trim() !== ''){
+        painRows.push({part:'', level:''});
+        renderPainRows();
+      }
+    });
+    levelInput.addEventListener('input', ()=>{ painRows[idx].level = levelInput.value; });
+    const delBtn = div.querySelector('.del-btn');
+    if(delBtn){
+      delBtn.addEventListener('click', ()=>{
+        painRows.splice(idx,1);
+        if(painRows.length===0) painRows.push({part:'', level:''});
+        renderPainRows();
+      });
+    }
+    container.appendChild(div);
+  });
+}
+
+function parseTimeToMinutes(t){
+  if(!t) return null;
+  const [h,m] = t.split(':').map(Number);
+  if(isNaN(h) || isNaN(m)) return null;
+  return h*60+m;
+}
+function computeSleepTotalMin(){
+  const startStr = document.getElementById('condSleepStart').value;
+  const endStr = document.getElementById('condSleepEnd').value;
+  const napRaw = document.getElementById('condNapMin').value;
+  const nap = napRaw !== '' ? parseInt(napRaw,10) : 0;
+  const startMin = parseTimeToMinutes(startStr);
+  const endMin = parseTimeToMinutes(endStr);
+  let coreMin = null;
+  if(startMin !== null && endMin !== null){
+    let diff = endMin - startMin;
+    if(diff <= 0) diff += 24*60;
+    coreMin = diff;
+  }
+  if(coreMin === null && nap === 0) return null;
+  return (coreMin || 0) + nap;
+}
+function updateSleepTotalDisplay(){
+  const total = computeSleepTotalMin();
+  const el = document.getElementById('condSleepTotal');
+  if(total === null){
+    el.textContent = '睡眠時間：-';
+  } else {
+    const h = Math.floor(total/60);
+    const m = total%60;
+    el.textContent = `睡眠時間：${h}時間${m}分`;
+  }
+}
+['condSleepStart','condSleepEnd','condNapMin'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', updateSleepTotalDisplay);
+  document.getElementById(id).addEventListener('change', updateSleepTotalDisplay);
+});
+
+function openConditionSheet(dateStr){
+  editingConditionDate = dateStr;
+  const cond = conditions[dateStr] || null;
+
+  document.getElementById('condDate').value = dateStr;
+  document.getElementById('condSleepStart').value = cond && cond.sleepStart ? cond.sleepStart : '';
+  document.getElementById('condSleepEnd').value = cond && cond.sleepEnd ? cond.sleepEnd : '';
+  document.getElementById('condNapMin').value = (cond && cond.napMin != null) ? cond.napMin : '';
+  updateSleepTotalDisplay();
+
+  selectedHrv = null;
+  document.getElementById('condHrvGrid').querySelectorAll('button').forEach(b=>{ b.classList.remove('selected'); b.style.background=''; });
+  if(cond && cond.hrv != null) selectHrv(cond.hrv);
+
+  selectedFatigue = null;
+  document.getElementById('condFatigueGrid').querySelectorAll('button').forEach(b=>{ b.classList.remove('selected'); b.style.background=''; });
+  document.getElementById('condFatigueHint').textContent = '\u00a0';
+  if(cond && cond.fatigue != null) selectFatigue(cond.fatigue);
+
+  if(cond && cond.pains && cond.pains.length > 0){
+    painRows = cond.pains.map(p=>({...p}));
+    painRows.push({part:'', level:''});
+  } else {
+    painRows = [{part:'', level:''}];
+  }
+  renderPainRows();
+
+  document.getElementById('condWeight').value = (cond && cond.weight != null) ? cond.weight : '';
+  document.getElementById('condTreatment').checked = !!(cond && cond.treatment);
+
+  const delBtn = document.getElementById('deleteConditionBtn');
+  delBtn.style.display = cond ? 'block' : 'none';
+  delBtn.dataset.armed = '';
+  delBtn.textContent = 'この記録を削除';
+
+  document.getElementById('conditionBackdrop').classList.add('open');
+}
+function closeConditionSheet(){
+  document.getElementById('conditionBackdrop').classList.remove('open');
+}
+
+async function handleSaveCondition(){
+  const date = document.getElementById('condDate').value;
+  if(!date){ showToast('日付を入力してください'); return; }
+
+  const sleepStart = document.getElementById('condSleepStart').value || null;
+  const sleepEnd = document.getElementById('condSleepEnd').value || null;
+  const napRaw = document.getElementById('condNapMin').value;
+  const napMin = napRaw !== '' ? parseInt(napRaw,10) : null;
+  const sleepTotalMin = computeSleepTotalMin();
+  const weightRaw = document.getElementById('condWeight').value;
+  const weight = weightRaw !== '' ? parseFloat(weightRaw) : null;
+  const treatment = document.getElementById('condTreatment').checked;
+  const pains = painRows
+    .filter(p => p.part && p.part.trim() !== '')
+    .map(p => ({ part: p.part.trim(), level: p.level !== '' ? parseInt(p.level,10) : null }));
+
+  conditions[date] = {
+    date, sleepStart, sleepEnd, napMin, sleepTotalMin,
+    hrv: selectedHrv, fatigue: selectedFatigue,
+    pains, weight, treatment
+  };
+  await saveConditions();
+  renderCalendar();
+  closeConditionSheet();
+  showToast('保存しました');
+}
+
+async function handleDeleteCondition(){
+  if(!editingConditionDate) return;
+  delete conditions[editingConditionDate];
+  await saveConditions();
+  renderCalendar();
+  closeConditionSheet();
+  showToast('削除しました');
+}
+
+
+
+document.getElementById('closeConditionSheet').addEventListener('click', closeConditionSheet);
+document.getElementById('cancelCondition').addEventListener('click', closeConditionSheet);
+document.getElementById('conditionBackdrop').addEventListener('click', (ev)=>{ if(ev.target.id==='conditionBackdrop') closeConditionSheet(); });
+document.getElementById('saveCondition').addEventListener('click', handleSaveCondition);
+wireDoubleConfirm(document.getElementById('deleteConditionBtn'), 'もう一度タップで削除確定', handleDeleteCondition);
+
+// ---- sheet ----
+function openSheet(entry, presetDate){
+  editingId = entry ? entry.id : null;
+  document.getElementById('sheetTitle').textContent = entry ? '記録を編集' : '記録を追加';
+  document.getElementById('fDate').value = entry ? entry.date : (presetDate || todayStr());
+  document.getElementById('fTimeOfDay').value = entry ? (entry.timeOfDay||'') : '';
+  document.getElementById('fDist').value = entry ? entry.distance : '';
+  document.getElementById('fRaceDistance').value = entry && entry.raceDistance ? entry.raceDistance : '';
+  document.getElementById('fComment').value = entry ? (entry.comment||'') : '';
+  document.getElementById('fTimeMin').value = (entry && entry.timeMin != null) ? entry.timeMin : '';
+  document.getElementById('fDrill').value = entry ? (entry.drill||'') : '';
+  document.getElementById('fUpDist').value = (entry && entry.upDist != null) ? entry.upDist : '';
+  document.getElementById('fUpTime').value = (entry && entry.upTime != null) ? entry.upTime : '';
+  document.getElementById('fDownDist').value = (entry && entry.downDist != null) ? entry.downDist : '';
+  document.getElementById('fDownTime').value = (entry && entry.downTime != null) ? entry.downTime : '';
+  document.getElementById('fPaceMin').value = (entry && entry.paceMin != null) ? entry.paceMin : '';
+  document.getElementById('fPaceSec').value = (entry && entry.paceSec != null) ? entry.paceSec : '';
+  document.getElementById('fAvgHr').value = (entry && entry.avgHr != null) ? entry.avgHr : '';
+  document.getElementById('fMaxHr').value = (entry && entry.maxHr != null) ? entry.maxHr : '';
+  document.getElementById('fSetDistance').value = entry ? (entry.setDistance||'') : '';
+  document.getElementById('fWindSprint').value = entry ? (entry.windSprint||'') : '';
+  document.getElementById('fRaceTargetTime').value = entry ? (entry.raceTargetTime||'') : '';
+  document.getElementById('fRaceResultTime').value = entry ? (entry.raceResultTime||'') : '';
+  document.getElementById('fRaceResultType').value = entry && entry.raceResultType ? entry.raceResultType : '';
+  document.getElementById('fRacePlace').value = entry ? (entry.racePlace||'') : '';
+  document.getElementById('fTargetPace').value = entry ? (entry.targetPace||'') : '';
+  document.getElementById('fActualLap').value = entry ? (entry.actualLap||'') : '';
+  document.getElementById('fLocation').value = entry ? (entry.location||'') : '';
+  document.getElementById('fWeather').value = entry && entry.weather ? entry.weather : '';
+  document.getElementById('fTemperature').value = (entry && entry.temperature != null) ? entry.temperature : '';
+  document.getElementById('fWind').value = entry && entry.wind ? entry.wind : '';
+  document.getElementById('fRepsSetsRest').value = entry ? (entry.repsSetsRest||'') : '';
+  document.getElementById('fRir').value = entry ? (entry.rir||'') : '';
+
+  document.getElementById('addSurfaceInline').style.display = 'none';
+  document.getElementById('addShoeInline').style.display = 'none';
+  document.getElementById('surfaceSelect').value = '';
+  document.getElementById('shoeSelect').value = '';
+  selectedSurface = entry && entry.surface ? entry.surface : null;
+  selectedShoe = entry && entry.shoe ? entry.shoe : null;
+  if(selectedSurface) document.getElementById('surfaceSelect').value = selectedSurface;
+  if(selectedShoe) document.getElementById('shoeSelect').value = selectedShoe;
+
+  selectedRpe = null;
+  document.querySelectorAll('.rpe-btn').forEach(b=>{ b.classList.remove('selected'); b.style.background=''; });
+  document.getElementById('rpeHint').textContent = '\u00a0';
+
+  selectedMenu = null;
+  document.getElementById('addCategoryInline').style.display = 'none';
+  document.getElementById('addItemInline').style.display = 'none';
+  currentCategory = entry ? (entry.category || 'Run') : 'Run';
+  const allCats = [...CATEGORY_BASE, ...customCategories];
+  document.getElementById('categorySelect').value = allCats.includes(currentCategory) ? currentCategory : 'Run';
+  if(!allCats.includes(currentCategory)) currentCategory = 'Run';
+  buildMenuSelectFor(currentCategory);
+  applyCategoryFieldVisibility();
+
+  if(entry){
+    if(entry.menu) selectMenuItem(entry.menu);
+    if(entry.rpe) selectRpe(entry.rpe);
+  }
+
+  const delBtn = document.getElementById('deleteEntryBtn');
+  delBtn.style.display = entry ? 'block' : 'none';
+  delBtn.dataset.armed = '';
+  delBtn.textContent = 'この記録を削除';
+  document.getElementById('backdrop').classList.add('open');
+}
+function closeSheet(){
+  document.getElementById('backdrop').classList.remove('open');
+}
+
+async function handleSave(){
+  const date = document.getElementById('fDate').value;
+  const timeOfDay = document.getElementById('fTimeOfDay').value || '';
+  const isTraining = currentCategory === 'トレーニング';
+  const comment = document.getElementById('fComment').value.trim();
+
+  if(!date){ showToast('日付を入力してください'); return; }
+  if(!selectedMenu){ showToast('メニューを選んでください'); return; }
+
+  let distance = 0;
+  let extraFields;
+
+  if(isTraining){
+    const repsSetsRest = document.getElementById('fRepsSetsRest').value.trim();
+    const location = document.getElementById('fLocation').value.trim();
+    const rir = document.getElementById('fRir').value.trim();
+    extraFields = { repsSetsRest, location, rir, timeOfDay, category: currentCategory };
+  } else {
+    const isRace = (selectedMenu === 'Race');
+    const raceDistance = isRace ? (document.getElementById('fRaceDistance').value || '') : '';
+    const distRaw = document.getElementById('fDist').value;
+    distance = distRaw !== '' ? parseFloat(distRaw) : 0;
+    if(isNaN(distance) || distance < 0) distance = 0;
+
+    const paceMinRaw = document.getElementById('fPaceMin').value;
+    const paceSecRaw = document.getElementById('fPaceSec').value;
+    const avgHrRaw = document.getElementById('fAvgHr').value;
+    const maxHrRaw = document.getElementById('fMaxHr').value;
+    const paceMin = paceMinRaw !== '' ? parseInt(paceMinRaw,10) : null;
+    const paceSec = paceSecRaw !== '' ? parseInt(paceSecRaw,10) : null;
+    const avgHr = avgHrRaw !== '' ? parseInt(avgHrRaw,10) : null;
+    const maxHr = maxHrRaw !== '' ? parseInt(maxHrRaw,10) : null;
+    const setDistance = document.getElementById('fSetDistance').value.trim();
+    const windSprint = document.getElementById('fWindSprint').value.trim();
+    const raceTargetTime = isRace ? document.getElementById('fRaceTargetTime').value.trim() : '';
+    const raceResultTime = isRace ? document.getElementById('fRaceResultTime').value.trim() : '';
+    const raceResultType = isRace ? (document.getElementById('fRaceResultType').value || '') : '';
+    const racePlace = isRace ? document.getElementById('fRacePlace').value.trim() : '';
+    const targetPace = document.getElementById('fTargetPace').value.trim();
+    const actualLap = document.getElementById('fActualLap').value.trim();
+    const location = document.getElementById('fLocation').value.trim();
+    const weather = document.getElementById('fWeather').value || '';
+    const tempRaw = document.getElementById('fTemperature').value;
+    const temperature = tempRaw !== '' ? parseFloat(tempRaw) : null;
+    const wind = document.getElementById('fWind').value || '';
+    const surface = selectedSurface || '';
+    const shoe = selectedShoe || '';
+    const timeMinRaw = document.getElementById('fTimeMin').value;
+    const timeMin = timeMinRaw !== '' ? parseInt(timeMinRaw,10) : null;
+    const upDownApplicable = (currentCategory === 'Run') && !isBlueOrGreenMenu(selectedMenu);
+    const upDistRaw = document.getElementById('fUpDist').value;
+    const upTimeRaw = document.getElementById('fUpTime').value;
+    const downDistRaw = document.getElementById('fDownDist').value;
+    const downTimeRaw = document.getElementById('fDownTime').value;
+    const upDist = (upDownApplicable && upDistRaw !== '') ? parseFloat(upDistRaw) : null;
+    const drill = document.getElementById('fDrill').value.trim();
+    const upTime = (upDownApplicable && upTimeRaw !== '') ? parseInt(upTimeRaw,10) : null;
+    const downDist = (upDownApplicable && downDistRaw !== '') ? parseFloat(downDistRaw) : null;
+    const downTime = (upDownApplicable && downTimeRaw !== '') ? parseInt(downTimeRaw,10) : null;
+
+    if(isRace){
+      const raceKm = RACE_DISTANCE_KM[raceDistance] || 0;
+      distance = raceKm + (upDist||0) + (downDist||0);
+    }
+
+    extraFields = { paceMin, paceSec, avgHr, maxHr, setDistance, windSprint, raceDistance, raceTargetTime, raceResultTime, raceResultType, racePlace, targetPace, actualLap, location, surface, shoe, weather, temperature, wind, timeMin, upDist, upTime, downDist, downTime, drill, timeOfDay, category: currentCategory };
+  }
+
+  if(editingId){
+    const idx = entries.findIndex(e=>e.id===editingId);
+    if(idx>-1){ entries[idx] = {...entries[idx], date, distance, rpe: isTraining ? null : selectedRpe, menu: selectedMenu, comment, ...extraFields}; }
+  } else {
+    entries.push({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,7), date, distance, rpe: isTraining ? null : selectedRpe, menu: selectedMenu, comment, ...extraFields });
+  }
+  await saveEntries();
+  renderDashboard();
+  renderColorBreakdown();
+  renderPbTable();
+  renderCalendar();
+  closeSheet();
+  showToast('保存しました');
+}
+
+async function handleDelete(){
+  if(!editingId) return;
+  entries = entries.filter(e=>e.id!==editingId);
+  await saveEntries();
+  renderDashboard();
+  renderColorBreakdown();
+  renderPbTable();
+  renderCalendar();
+  closeSheet();
+  showToast('削除しました');
+}
+
+function wireDoubleConfirm(btn, confirmText, action){
+  btn.addEventListener('click', ()=>{
+    if(btn.dataset.armed === '1'){
+      btn.dataset.armed = '';
+      btn.textContent = btn.dataset.original;
+      action();
+    } else {
+      btn.dataset.original = btn.textContent;
+      btn.dataset.armed = '1';
+      btn.textContent = confirmText;
+      clearTimeout(Number(btn.dataset.timer)||0);
+      const t = setTimeout(()=>{ btn.dataset.armed=''; btn.textContent = btn.dataset.original; }, 3000);
+      btn.dataset.timer = t;
+    }
+  });
+}
+
+document.getElementById('closeSheet').addEventListener('click', closeSheet);
+document.getElementById('cancelEntry').addEventListener('click', closeSheet);
+document.getElementById('backdrop').addEventListener('click', (ev)=>{ if(ev.target.id==='backdrop') closeSheet(); });
+document.getElementById('saveEntry').addEventListener('click', handleSave);
+wireDoubleConfirm(document.getElementById('deleteEntryBtn'), 'もう一度タップで削除確定', handleDelete);
+
+document.getElementById('prevMonth').addEventListener('click', ()=>{
+  viewMonth--;
+  if(viewMonth<0){ viewMonth=11; viewYear--; }
+  renderCalendar();
+  renderColorBreakdown();
+});
+document.getElementById('nextMonth').addEventListener('click', ()=>{
+  viewMonth++;
+  if(viewMonth>11){ viewMonth=0; viewYear++; }
+  renderCalendar();
+  renderColorBreakdown();
+});
+
+function switchTab(tab){
+  const calView = document.getElementById('calendarView');
+  const dataView = document.getElementById('dataView');
+  const calBtn = document.getElementById('tabCalendarBtn');
+  const dataBtn = document.getElementById('tabDataBtn');
+  if(tab === 'data'){
+    calView.style.display = 'none';
+    dataView.style.display = 'block';
+    calBtn.classList.remove('active');
+    dataBtn.classList.add('active');
+  } else {
+    calView.style.display = 'block';
+    dataView.style.display = 'none';
+    dataBtn.classList.remove('active');
+    calBtn.classList.add('active');
+  }
+}
+document.getElementById('tabCalendarBtn').addEventListener('click', ()=> switchTab('calendar'));
+document.getElementById('tabDataBtn').addEventListener('click', ()=> switchTab('data'));
+
+(async function init(){
+  initView();
+  buildRpeGrid();
+  buildHrvGrid();
+  buildFatigueGrid();
+  await loadProfilesConfig();
+  await loadProfileData();
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{ /* offline/sandbox environments may block this silently */ });
+  });
+}
+</script>
+</body>
+</html>
